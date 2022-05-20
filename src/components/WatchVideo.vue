@@ -26,7 +26,7 @@
                 :selected-auto-loop="selectedAutoLoop"
             />
             <div class="font-bold mt-2 text-2xl break-words" v-text="video.title" />
-
+ 
             <div class="flex mb-1.5">
                 <span v-t="{ path: 'video.views', args: { views: addCommas(video.views) } }" />
                 <span class="ml-2" v-text="uploadDate" />
@@ -47,6 +47,32 @@
                             <strong v-t="'video.ratings_disabled'" />
                         </div>
                     </template>
+ 
+                    <template v-if="video.videoStreams != 'undefined'">
+                        <select name="" id="" class="btn rounded-none rounded-l" v-model="selected_download_format">
+                            <optgroup v-if="getVideoMimes.length > 0" label="Video">
+                                <option 
+                                    v-for="(mime,mimeIndex) in getVideoMimes" 
+                                    :key="mimeIndex" 
+                                    :value="mime.url"  
+                                >{{mime.quality}}</option> 
+                            </optgroup>
+                            <optgroup v-if="getAudioMimes.length > 0" label="Audio">
+                                <option 
+                                    v-for="(mime,mimeIndex) in getAudioMimes" 
+                                    :key="mimeIndex" 
+                                    :value="mime.url"  
+                                >{{mime.quality}}</option> 
+                            </optgroup>
+                        </select>
+                        <button type="button" @click="openDownloadLink()" class="btn ml-0 rounded-none rounded-r">
+                            <i18n-t keypath="player.download" tag="strong">
+                                <font-awesome-icon icon="download" />
+                            </i18n-t>
+                        </button> 
+                    </template>
+ 
+
                     <a :href="`https://youtu.be/${getVideoId()}`" class="btn">
                         <i18n-t keypath="player.watch_on" tag="strong">
                             <font-awesome-icon class="mx-1.5" :icon="['fab', 'youtube']" />
@@ -203,6 +229,7 @@ export default {
             smallViewQuery: smallViewQuery,
             smallView: smallViewQuery.matches,
             showModal: false,
+            selected_download_format : "",
         };
     },
     computed: {
@@ -224,6 +251,40 @@ export default {
                 year: "numeric",
             });
         },
+        getIsVideoLoaded(_this){
+            return typeof _this.video.videoStreams != "undefined"
+        },
+        getVideoStreams(_this){
+            return _this.getIsVideoLoaded ? JSON.parse(JSON.stringify(_this.video.videoStreams)) : [];
+        },
+        getAudioStreams(_this){
+            return _this.getIsVideoLoaded ? JSON.parse(JSON.stringify(_this.video.audioStreams)) : [];
+        },
+        getVideoMimes(_this){  
+            let list = _this
+            .getVideoStreams.filter(v => v.mimeType == 'video/mp4' && v.height > 0 ) 
+            .sort((a, b) => { 
+                if(a.height == b.height){ return 0; }
+                return a.height > b.height ? -1 : 1;
+            });
+            if(list.length > 0 && _this.selected_download_format == ""){
+                _this.selected_download_format = list[0].url;
+            }  
+            return list;
+        },
+        getAudioMimes(_this){ 
+            let list = _this
+            .getAudioStreams
+            .sort((a, b) => { 
+                if(a.bitrate == b.bitrate){ return 0; }
+                return a.bitrate > b.bitrate ? -1 : 1;
+            });
+            if(list.length > 0 && _this.selected_download_format == ""){
+                _this.selected_download_format = list[0].url;
+            }  
+            return list;
+        }
+      
     },
     mounted() {
         this.getVideoData().then(() => {
@@ -414,6 +475,10 @@ export default {
         navigate(time) {
             this.$refs.videoPlayer.seek(time);
         },
+        openDownloadLink(){
+            // open new tab with download link
+            window.open(this.selected_download_format, '_blank');
+        }
     },
 };
 </script>

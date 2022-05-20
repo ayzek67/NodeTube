@@ -10,7 +10,8 @@
         "playlists": "Playlists"
     },
     "player": {
-        "watch_on": "Watch on {0}"
+        "watch_on": "Watch on {0}",
+        "download": "Download {0}"
     },
     "actions": {
         "subscribe": "Subscribe - {count}",
